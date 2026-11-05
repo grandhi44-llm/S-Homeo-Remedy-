@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1b5e4a">
+<title>SHC Remedy Finder</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<style>
+  :root { --g: #1b5e4a; --g2: #2e7d5b; --gl: #e6f2ec; --amber: #b86e00; --al: #fff4e0; --ink: #1f2a26; --mute: #5f6f69; --line: #d9e3de; --bg: #f5f8f6; --card: #fff; --red: #b3261e; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", sans-serif; }
+  header { background: var(--g); color: #fff; padding: 14px 16px 12px; position: sticky; top: 0; z-index: 5; box-shadow: 0 2px 6px rgba(0,0,0,.15); }
+  header h1 { margin: 0; font-size: 19px; font-weight: 700; letter-spacing: .2px; }
+  header .sub { font-size: 12.5px; opacity: .85; margin-top: 2px; }
+  .steps { display: flex; gap: 6px; margin-top: 10px; }
+  .steps span { flex: 1; text-align: center; font-size: 12px; padding: 5px 4px; border-radius: 8px; background: rgba(255,255,255,.14); }
+  .steps span.on { background: #fff; color: var(--g); font-weight: 700; }
+  main { max-width: 720px; margin: 0 auto; padding: 14px 14px 90px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; margin-bottom: 12px; }
+  label.lbl { display: block; font-size: 13px; font-weight: 700; color: var(--g); margin: 2px 0 6px; text-transform: uppercase; letter-spacing: .4px; }
+  textarea { width: 100%; min-height: 190px; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font: 15.5px/1.45 inherit; resize: vertical; background: #fbfdfc; }
+  textarea:focus, select:focus, input:focus { outline: 2px solid var(--g2); border-color: transparent; }
+  select, input[type=text] { width: 100%; border: 1px solid var(--line); border-radius: 10px; padding: 11px 12px; font: 15.5px inherit; background: #fbfdfc; }
+  .hint { font-size: 13px; color: var(--mute); margin-top: 6px; }
+  .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .btn { appearance: none; border: 0; border-radius: 12px; padding: 13px 18px; font: 600 16px inherit; cursor: pointer; background: var(--g); color: #fff; width: 100%; }
+  .btn.sec { background: #fff; color: var(--g); border: 1.5px solid var(--g); }
+  .btn.sm { width: auto; padding: 8px 12px; font-size: 14px; border-radius: 9px; }
+  .btn:disabled { opacity: .5; cursor: default; }
+  .link { background: none; border: 0; color: var(--g2); font: 500 14px inherit; text-decoration: underline; cursor: pointer; padding: 4px 0; }
+  .bar { position: fixed; left: 0; right: 0; bottom: 0; background: #fff; border-top: 1px solid var(--line); padding: 10px 14px calc(10px + env(safe-area-inset-bottom)); display: flex; gap: 10px; max-width: 720px; margin: 0 auto; }
+  .bar .btn { flex: 1; }
+  /* rubric screen */
+  .sym { border-left: 4px solid var(--line); }
+  .sym.key { border-left-color: var(--amber); background: #fffaf1; }
+  .sym h3 { margin: 0 0 6px; font-size: 15.5px; display: flex; align-items: flex-start; gap: 8px; }
+  .sym h3 .kbadge { font-size: 11px; background: var(--amber); color: #fff; border-radius: 6px; padding: 2px 6px; white-space: nowrap; margin-top: 2px; }
+  .keyrow { font-size: 13px; color: var(--mute); margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+  .opt { display: flex; align-items: flex-start; gap: 9px; padding: 7px 0; border-top: 1px dashed var(--line); font-size: 14.5px; }
+  .opt input { margin-top: 4px; width: 18px; height: 18px; flex: none; accent-color: var(--g); }
+  .opt .path { flex: 1; }
+  .opt .path small { color: var(--mute); display: block; font-size: 12px; }
+  .opt .n { font-size: 12px; color: var(--g); background: var(--gl); border-radius: 6px; padding: 2px 7px; white-space: nowrap; margin-top: 2px; }
+  .opt .shc { background: var(--al); color: var(--amber); }
+  .opt .rad { background: #e8eefc; color: #2b4a9b; }
+  .search { display: flex; gap: 6px; margin-top: 8px; }
+  .search input { flex: 1; padding: 8px 10px; font-size: 14px; }
+  .none { color: var(--red); font-size: 14px; padding: 6px 0; }
+  /* result */
+  .res { border: 0; color: #fff; padding: 18px; }
+  .res.sim { background: linear-gradient(135deg, var(--g), var(--g2)); }
+  .res.org { background: linear-gradient(135deg, #8a4f00, var(--amber)); }
+  .res.none { background: #6d7a75; }
+  .res .t { font-size: 12.5px; text-transform: uppercase; letter-spacing: .8px; opacity: .9; }
+  .res .name { font-size: 28px; font-weight: 800; margin: 4px 0 2px; line-height: 1.15; }
+  .res .why { font-size: 14px; opacity: .95; margin-top: 6px; }
+  .res ul { margin: 6px 0 0; padding-left: 18px; font-size: 13.5px; opacity: .95; }
+  .rx { font-size: 17px; font-weight: 700; color: var(--g); }
+  details { border-top: 1px solid var(--line); padding: 8px 0; }
+  details summary { cursor: pointer; font-weight: 600; font-size: 15px; }
+  details .d { font-size: 13.5px; color: var(--mute); margin: 4px 0 2px; }
+  details ol, details ul { margin: 4px 0; padding-left: 20px; font-size: 14px; }
+  .warn { background: var(--al); border: 1px solid #f1d9a8; color: #6b4300; border-radius: 10px; padding: 9px 12px; font-size: 13.5px; margin-bottom: 12px; }
+  .foot { font-size: 12px; color: var(--mute); text-align: center; margin-top: 18px; line-height: 1.5; }
+  #load { text-align: center; padding: 60px 20px; color: var(--mute); }
+  .prog { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; margin: 14px auto; max-width: 300px; }
+  .prog i { display: block; height: 100%; width: 0; background: var(--g2); transition: width .3s; }
+  .hide { display: none !important; }
+  .tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  .tbl td, .tbl th { padding: 4px 6px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+  .tbl th { color: var(--g); font-size: 12px; text-transform: uppercase; }
+</style>
+</head>
+<body>
+<header>
+  <h1>SHC Remedy Finder</h1>
+  <div class="sub">S Homeo Protocol · Srinivas Homoeo Care</div>
+  <div class="steps"><span id="st1" class="on">1 Case</span><span id="st2">2 Rubrics</span><span id="st3">3 Result</span></div>
+</header>
+<main>
+  <div id="load">Loading remedy database…<div class="prog"><i id="pbar"></i></div><div id="ptxt" class="hint"></div></div>
+
+  <!-- Screen 1 -->
+  <section id="s1" class="hide">
+    <div class="card">
+      <label class="lbl" for="case">Symptom list / case description</label>
+      <textarea id="case" placeholder="Write one symptom per line.
+Mark the keynote (PQRS) symptom with ++++
+
+Example:
+Nodules on the vocal cords, voice lost ++++
+Hoarse voice from overuse, teacher
+Craves sour drinks and lemons
+Sleeps on the left side"></textarea>
+      <div class="hint">One symptom per line. Put <b>++++</b> on the keynote (most peculiar / PQRS) symptom. If none is marked, the first line is taken as keynote.</div>
+      <button class="link" id="example">Load example case</button>
+    </div>
+    <div class="card">
+      <label class="lbl" for="thermal">Patient constitution (thermal)</label>
+      <select id="thermal">
+        <option value="Ignore">Ignore thermals</option>
+        <option value="Hot">Hot patient</option>
+        <option value="Chilly">Chilly patient</option>
+      </select>
+      <div class="hint"><b>Hot:</b> needs AC/fan continuously, even in winter; cannot tolerate heat. <b>Chilly:</b> cannot tolerate cold weather or AC air; covers fully while sleeping. Perspiration does not decide it.</div>
+    </div>
+    <button class="btn" id="go1">Find rubrics →</button>
+    <div class="foot">Database: SHC remedy–rubric–patient-language notes · SHC RadarOpus rubric list · Boericke MM &amp; relationships · Repertorium Publicum (Kent-derived, GPL v3) · Clarke &amp; Allen relationships</div>
+  </section>
+
+  <!-- Screen 2 -->
+  <section id="s2" class="hide">
+    <div class="warn">Check the rubrics found for each symptom. Tick the ones that fit, untick wrong ones, or search to add. The keynote symptom is marked in orange — change it with the <b>Keynote</b> button if needed.</div>
+    <div id="symlist"></div>
+    <div class="bar"><button class="btn sec" id="back2">← Case</button><button class="btn" id="go2">Run protocol →</button></div>
+  </section>
+
+  <!-- Screen 3 -->
+  <section id="s3" class="hide">
+    <div id="result"></div>
+    <div class="bar"><button class="btn sec" id="back3">← Rubrics</button><button class="btn" id="new3">New case</button></div>
+  </section>
+</main>
+<script src="engine.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

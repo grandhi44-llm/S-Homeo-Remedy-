@@ -1,0 +1,2 @@
+{ "name": "SHC Remedy Finder", "short_name": "SHC Finder", "start_url": "./index.html", "display": "standalone", "background_color": "#f5f8f6", "theme_color": "#1b5e4a",
+  "icons": [ { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml" } ] }
