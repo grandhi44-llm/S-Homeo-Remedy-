@@ -102,7 +102,10 @@ Sweets cause drowsiness`;
   function renderResult(r) {
     const sim = r.simil, org = r.organRem;
     const top = r.ranked.slice(0, 12);
+    const nOthers = r.ranked.length ? (r.log.find(l => l.step.startsWith('7')) || { text: '' }).text.match(/^(\d+)/) : null;
+    const others = nOthers ? +nOthers[1] : 0;
     $('result').innerHTML = `
+      ${others < 3 ? `<div class="warn"><b>Only ${others} other symptom${others === 1 ? '' : 's'} entered.</b> The protocol ranks remedies by how many symptoms they cover (Step 7); with so few, the result is just the keynote rubric ordered by grade. Add modalities, generals and mind symptoms for a real ranking.</div>` : ''}
       <div class="card res sim"><div class="t">Simillimum</div><div class="name">${esc(sim.name)}</div>
         <div class="why">${sim.strikes} strike${sim.strikes === 1 ? '' : 's'} on the other symptoms · in keynote rubric${sim.kStrikes > 1 ? 's ×' + sim.kStrikes : ''}${sim.kGrade ? ' (grade ' + sim.kGrade + ')' : ''}</div>
         ${sim.matched.length ? '<ul>' + sim.matched.map(m => '<li>' + esc(m) + '</li>').join('') + '</ul>' : ''}</div>

@@ -11,13 +11,13 @@
   :root { --g: #1b5e4a; --g2: #2e7d5b; --gl: #e6f2ec; --amber: #b86e00; --al: #fff4e0; --ink: #1f2a26; --mute: #5f6f69; --line: #d9e3de; --bg: #f5f8f6; --card: #fff; --red: #b3261e; }
   * { box-sizing: border-box; }
   html, body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", sans-serif; }
-  header { background: var(--g); color: #fff; padding: 14px 16px 12px; position: sticky; top: 0; z-index: 5; box-shadow: 0 2px 6px rgba(0,0,0,.15); }
+  header { background: var(--g); color: #fff; padding: calc(14px + env(safe-area-inset-top, 0px)) 16px 12px; position: sticky; top: 0; z-index: 5; box-shadow: 0 2px 6px rgba(0,0,0,.15); }
   header h1 { margin: 0; font-size: 19px; font-weight: 700; letter-spacing: .2px; }
   header .sub { font-size: 12.5px; opacity: .85; margin-top: 2px; }
   .steps { display: flex; gap: 6px; margin-top: 10px; }
   .steps span { flex: 1; text-align: center; font-size: 12px; padding: 5px 4px; border-radius: 8px; background: rgba(255,255,255,.14); }
   .steps span.on { background: #fff; color: var(--g); font-weight: 700; }
-  main { max-width: 720px; margin: 0 auto; padding: 14px 14px 90px; }
+  main { max-width: 720px; margin: 0 auto; padding: 14px 14px calc(110px + env(safe-area-inset-bottom, 0px)); }
   .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; margin-bottom: 12px; }
   label.lbl { display: block; font-size: 13px; font-weight: 700; color: var(--g); margin: 2px 0 6px; text-transform: uppercase; letter-spacing: .4px; }
   textarea { width: 100%; min-height: 190px; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font: 15.5px/1.45 inherit; resize: vertical; background: #fbfdfc; }
@@ -30,7 +30,7 @@
   .btn.sm { width: auto; padding: 8px 12px; font-size: 14px; border-radius: 9px; }
   .btn:disabled { opacity: .5; cursor: default; }
   .link { background: none; border: 0; color: var(--g2); font: 500 14px inherit; text-decoration: underline; cursor: pointer; padding: 4px 0; }
-  .bar { position: fixed; left: 0; right: 0; bottom: 0; background: #fff; border-top: 1px solid var(--line); padding: 10px 14px calc(10px + env(safe-area-inset-bottom)); display: flex; gap: 10px; max-width: 720px; margin: 0 auto; }
+  .bar { position: fixed; left: 0; right: 0; bottom: 0; background: #fff; border-top: 1px solid var(--line); padding: 10px 14px calc(12px + env(safe-area-inset-bottom, 0px)); display: flex; gap: 10px; max-width: 720px; margin: 0 auto; }
   .bar .btn { flex: 1; }
   /* rubric screen */
   .sym { border-left: 4px solid var(--line); }
