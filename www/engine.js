@@ -279,13 +279,14 @@
             if (!inOrgan) continue;
             if (requireOrganopathy && !isOrg) continue;
             const kwHit = kw.some(k => k.length > 3 && t.includes(k));
-            if (!requireOrganopathy && !kwHit) continue;
-            ev.push({ s: 1 + (isOrg ? 1 : 0) + (kwHit ? 2 : 0), row });
+            const organWordHit = od.w.some(w => t.includes(w));
+            if (!requireOrganopathy && !organWordHit && !kwHit) continue;     // second branch: any row naming the organ (keynote words add weight)
+            ev.push({ s: 1 + (isOrg ? 1 : 0) + (kwHit ? 2 : 0) + (organWordHit ? 1 : 0), row });
           }
           return ev;
         };
         let best = null;
-        for (const [rule, req] of [['organ remedy named in SHC organopathy notes', true], ['organ-section rows containing the keynote words', false]]) {
+        for (const [rule, req] of [['organ remedy named in SHC organopathy notes', true], ['rows naming the organ (Larynx/Voice etc.) in SHC notes, RadarOpus list or Boericke', false]]) {
           for (const c of cands) {
             const ev = score(c, req); if (!ev.length) continue;
             const s = ev.reduce((a, e) => a + e.s, 0);
