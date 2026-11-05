@@ -48,6 +48,13 @@
     urine: ['urine', 'urination'], urination: ['urination', 'urine'], burning: ['burning'], frequent: ['frequent'], night: ['night'], morning: ['morning'], evening: ['evening'], afternoon: ['afternoon'],
     children: ['children', 'child'], child: ['children'], baby: ['children', 'infants'], obesity: ['obesity', 'fat'], obese: ['obesity', 'fat'], diabetes: ['diabetes', 'urine sugar'], diabetic: ['diabetes'],
     bp: ['hypertension', 'blood pressure'], hypertension: ['hypertension', 'blood pressure high'], thyroid: ['thyroid', 'goitre', 'goiter'], hair: ['hair'], fall: ['falling'], falling: ['falling'], dandruff: ['dandruff'],
+    sunlight: ['sun', 'light'], sun: ['sun'], light: ['light'], movement: ['motion'], moving: ['motion'], move: ['motion'], hunger: ['hunger', 'fasting'], hungry: ['hunger', 'fasting'], fasting: ['fasting', 'hunger'],
+    exertion: ['exertion'], mental: ['mental'], darkness: ['dark', 'darkness'], dark: ['dark', 'darkness'], pressure: ['pressure'], firm: ['pressure', 'hard'], vomiting: ['vomiting'], throbbing: ['pulsating', 'throbbing', 'beating'], pulsating: ['throbbing'],
+    occiput: ['occiput', 'occipital'], 'back': ['back', 'occiput'], temple: ['temples'], temples: ['temple'], forehead: ['forehead', 'frontal'], eye: ['eye', 'eyes'], eyes: ['eye'],
+    criticism: ['reproaches', 'criticism', 'reprimands', 'contradiction'], criticised: ['reproaches'], criticized: ['reproaches'], offended: ['offended', 'sensitive'], offence: ['offended'], suppress: ['suppressed'], suppressed: ['suppressed'], suppresses: ['suppressed'],
+    consolation: ['consolation', 'consolation agg'], began: ['ailments from'], since: ['ailments from'], after: ['ailments from', 'after'], workplace: ['business', 'work'], office: ['business', 'work'], solitude: ['solitude', 'company aversion', 'alone'], alone: ['alone', 'solitude'], responsible: ['conscientious', 'responsibility'], responsibility: ['conscientious', 'responsibility'], conscientious: ['conscientious'],
+    unfinished: ['business', 'duty'], work: ['business', 'work', 'occupation'], upset: ['vexation', 'grief'], stress: ['mental exertion', 'anxiety', 'overwork'], overwork: ['overwork', 'mental exertion'], 'late': ['night'], 'skipped': ['fasting', 'hunger'], 'meals': ['eating', 'eating after'],
+    salty: ['salt', 'salty things'], salt: ['salt', 'salty'], water: ['water'], cold: ['cold', 'chilly'], recurrent: ['periodical', 'recurrent', 'chronic'], recurring: ['periodical', 'recurrent'], headaches: ['headache', 'head pain'],
     open: ['open'], air: ['air'], fan: ['air fanned', 'air'], ac: ['cold air', 'air'], bath: ['bathing'], bathing: ['bathing'], covering: ['covering', 'covers'], uncover: ['uncovering'],
   };
 
@@ -151,7 +158,7 @@
         const ptoks = r.path.toLowerCase().split(/[^a-z]+/).filter(x => x.length > 2 && !['and', 'the', 'agg', 'amel', 'with', 'from', 'etc', 'during', 'after', 'before'].includes(x));
         const prec = e.n / Math.max(ptoks.length, 1);
         let score = frac * 2 + prec * 0.4;
-        if (nrem === 1) score -= 0.25; else if (nrem === 2) score -= 0.12; if (nrem > 150) score -= 0.15; if (r.src === 'SHC') score += 0.05; if (r.src === 'RAD') score += 0.08;
+        if (nrem === 1) score -= 0.25; else if (nrem === 2) score -= 0.12; if (nrem > 150) score -= 0.08; if (r.src === 'SHC') score += 0.05; if (r.src === 'RAD') score += 0.08;
         out.push({ i, n: e.n, frac, score, nrem });
       }
       out.sort((a, b) => b.score - a.score);
@@ -164,24 +171,49 @@
       const bestOf = src => cands.find(c => c.r.src === src && c.score >= best.score - (isKeynote ? 0.3 : 0.35));
       const picks = new Set();
       if (isKeynote) {
-        // keynote: the best rubric from each repertory layer (Kent-derived + RadarOpus list) and a close SHC-notes rubric
-        [bestOf('RAD'), bestOf('REP'), bestOf('SHC')].forEach(c => { if (c && c.frac >= best.frac - 0.05) picks.add(c); });
-        if (!picks.size) picks.add(best);
+        // keynote: prefer real rubrics (3+ remedies); best of each repertory layer (Kent-derived + RadarOpus list) plus a close SHC-notes rubric
+        const adj = c => c.score + (c.nrem >= 3 ? 0.3 : 0);
+        const top = cands.reduce((a, c) => adj(c) > adj(a) ? c : a, cands[0]);
+        const bestAdj = src => cands.filter(c => c.r.src === src && adj(c) >= adj(top) - 0.3 && c.frac >= top.frac - 0.1).sort((a, b) => adj(b) - adj(a))[0];
+        [bestAdj('RAD'), bestAdj('REP'), bestAdj('SHC')].forEach(c => { if (c) picks.add(c); });
+        if (!picks.size) picks.add(top);
       } else {
-        cands.filter(c => c.score >= best.score - 0.25).slice(0, 3).forEach(c => picks.add(c));
-        const rep = bestOf('REP'); if (rep) picks.add(rep);          // always carry the full-repertory rubric when it is close
+        // other symptoms: the best match overall, plus the best full-repertory rubric (Kent-derived), the best RadarOpus rubric with 3+ remedies
+        // and the best SHC-notes rubric, when each matches the words about as well as the best one
+        picks.add(best);
+        const close = c => c.frac >= best.frac - 0.1;
+        const rep = cands.filter(c => c.r.src === 'REP' && close(c)).sort((a, b) => b.nrem - a.nrem)[0]; if (rep) picks.add(rep);
+        const rad = cands.filter(c => c.r.src === 'RAD' && c.nrem >= 3 && close(c))[0]; if (rad) picks.add(rad);
+        const shc = cands.filter(c => c.r.src === 'SHC' && close(c))[0]; if (shc) picks.add(shc);
       }
       return cands.filter(c => picks.has(c));
     }
     parseCase(text) {
       const SPLIT = /\n|;|\.\s+(?=[A-Z])|\s+but\s+|\s+also\s+|\s+whereas\s+/;
       let lines = text.split(SPLIT).map(s => s.trim()).filter(s => s.length > 1);
-      if (lines.length < 3) {   // paragraph style: split on commas too, re-attaching one-word fragments to the previous piece
-        const parts = text.split(/,|\n|;|\.\s+(?=[A-Z])|\s+but\s+|\s+also\s+|\s+whereas\s+/).map(s => s.trim()).filter(s => s.length > 1);
-        lines = []; parts.forEach(p => { if (lines.length && p.split(/\s+/).length === 1 && !/\+\+|pqrs/i.test(p) && /\b(like|such as|e\.g\.|viz|including|especially)\b/i.test(lines[lines.length - 1])) lines[lines.length - 1] += ', ' + p; else lines.push(p); });
-      }
       let key = lines.findIndex(l => /\+\+\+|pqrs|keynote/i.test(l)); if (key < 0) key = 0;
-      return { lines: lines.map(l => l.replace(/\(?pqrs\)?/ig, '').replace(/\+{2,}/g, '').replace(/keynote:?/ig, '').replace(/^(and|with|also)\s+/i, '').trim()).filter(Boolean), keynote: key };
+      const topic = (() => { const m = lines[key].toLowerCase().match(/\b(headaches?|head pains?|migraines?|cough|pains?|eczema|itching|asthma|diarrh\w+|constipation|vertigo|fever|vomiting|nausea|acidity|piles|insomnia|palpitation|hoarseness|voice|menses|periods?)\b/); return m ? m[1].replace(/s$/, '') : ''; })();
+      // verb cue inside a clause, e.g. "worsen from", "desires", "dislikes" -> normalised repertory wording, carried into the following short clauses
+      const CUE = /\b(desires?|craves?|craving for|likes?|wants?|dislikes?|aversion to|averse to|hates?|cannot (?:tolerate|bear)|worse(?: from| in| by| with| after| during| on)?|worsens?(?: from| in| by| with| after| during| on)?|aggravated(?: by| from)?|better(?: from| in| by| with| after| during| on)?|improves?(?: in| with| after| by| from| on)?|relieved(?: by| from)?|ameliorated(?: by)?|fear of|afraid of|anxious about|sensitive to|prefers?)\b/i;
+      const norm = c => { c = c.toLowerCase(); if (/^(worse|worsen|aggravated)/.test(c)) return 'agg'; if (/^(better|improve|relieved|ameliorated)/.test(c)) return 'amel'; if (/^(desire|crave|craving|like|want)/.test(c)) return 'desire'; if (/^(dislike|aversion|averse|hate|cannot)/.test(c)) return 'aversion'; if (/^(fear|afraid)/.test(c)) return 'fear'; if (/^anxious/.test(c)) return 'anxiety'; if (/^prefer/.test(c)) return 'desire'; return c; };
+      const out = []; let newKey = -1;
+      lines.forEach((line, li) => {
+        const isKey = li === key;
+        let l = line.replace(/\(?pqrs\)?/ig, '').replace(/\+{2,}/g, '').replace(/keynote:?/ig, '').trim();
+        l = l.replace(/^(they|it|these|this)\s+(worsen|worsens|improve|improves|are worse|are better|get worse|get better)/i, (m, p, v) => (topic || 'complaints') + ' ' + v);
+        const nWords = l.split(/\s+/).length;
+        if (isKey || nWords <= 7) { if (isKey) newKey = out.length; out.push(l); return; }
+        // long sentence: split into clauses, carry the verb cue (and the subject, e.g. headache) into the short clauses that follow
+        const parts = l.split(/,|\s+and\s+(?=[a-z])/i).map(p => p.trim()).filter(p => p.length > 1);
+        let cue = '';
+        parts.forEach((p, pi) => {
+          const m = p.match(CUE);
+          if (m) { const subj = /^(headache|head pain|migraine|cough|pain|complaints)/i.test(p) ? p.split(/\s+/)[0] + ' ' : ''; cue = subj + norm(m[1]); out.push(p.replace(m[0], norm(m[1]))); }
+          else if (cue && pi > 0 && p.split(/\s+/).length <= 3) out.push(cue + ' ' + p);
+          else out.push(p);
+        });
+      });
+      return { lines: out.map(x => x.replace(/^(and|with|also)\s+/i, '').trim()).filter(x => x.length > 1), keynote: Math.max(newKey, 0) };
     }
     thermalOf(id) { const t = this.thermal[id]; return t ? t[0] : null; }
     isInimical(a, b) { return (this.inimical[a] || []).includes(b); }
@@ -226,8 +258,12 @@
       // organ of the keynote: organ words in the keynote text + selected rubric paths, chapter mapping as fallback
       const organCount = new Map();
       const ktext = (key.text + ' ' + key.rubrics.map(ri => this.rubrics[ri].path).join(' ')).toLowerCase();
-      for (const [o, d] of Object.entries(this.organs)) { let n = 0; d.w.forEach(w => { if (ktext.includes(w)) n += (w.length > 4 ? 2 : 1); }); if (n) organCount.set(o, n); }
-      if (!organCount.size) key.rubrics.forEach(ri => { const o = this.organOf(this.rubrics[ri]); if (o) organCount.set(o, (organCount.get(o) || 0) + 1); });
+      for (const [o, d] of Object.entries(this.organs)) {
+        let n = 0;
+        d.w.forEach(w => { const re = new RegExp('\\b' + w.replace(/[^a-z ]/g, '') + (w.length > 5 ? '' : '\\b'), 'g'); const c = (ktext.match(re) || []).length; if (c) n += Math.min(c, 4); });
+        if (n) organCount.set(o, n);
+      }
+      key.rubrics.forEach(ri => { const o = this.organOf(this.rubrics[ri]); if (o) organCount.set(o, (organCount.get(o) || 0) + 3); });
       const organ = [...organCount.entries()].sort((a, b) => b[1] - a[1]).map(e => e[0])[0] || null;
       let organRem = null, organEv = [], organRule = '';
       if (organ) {

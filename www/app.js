@@ -49,7 +49,7 @@ Sweets cause drowsiness`;
     try { localStorage.setItem('shc_case', text); localStorage.setItem('shc_thermal', $('thermal').value); } catch (e) { }
     parsed = eng.parseCase(text);
     symptoms = parsed.lines.map((l, i) => {
-      const cands = eng.findRubrics(l, 8);
+      const cands = eng.findRubrics(l, 12);
       const sel = new Set(eng.defaultSelect(cands, i === parsed.keynote).map(c => c.i));
       return { text: l, cands, sel, keynote: i === parsed.keynote };
     });
