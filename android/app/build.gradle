@@ -16,8 +16,22 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        shc {
+            if (file('shc-upload.jks').exists() && System.getenv('SHC_KEYSTORE_PASS')) {
+                storeFile file('shc-upload.jks')
+                storePassword System.getenv('SHC_KEYSTORE_PASS')
+                keyAlias 'shc'
+                keyPassword System.getenv('SHC_KEYSTORE_PASS')
+            }
+        }
+    }
     buildTypes {
+        debug {
+            if (file('shc-upload.jks').exists() && System.getenv('SHC_KEYSTORE_PASS')) signingConfig signingConfigs.shc
+        }
         release {
+            if (file('shc-upload.jks').exists() && System.getenv('SHC_KEYSTORE_PASS')) signingConfig signingConfigs.shc
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }

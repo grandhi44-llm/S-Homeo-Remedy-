@@ -23,8 +23,16 @@ jobs:
       - name: Accept Android SDK licences (SDK is pre-installed on the runner)
         run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses >/dev/null 2>&1 || true
 
-      - name: Build debug APK
+      - name: Restore the fixed signing key (repository secrets SHC_KEYSTORE_B64 / SHC_KEYSTORE_PASS)
+        if: ${{ env.KS != '' }}
+        env:
+          KS: ${{ secrets.SHC_KEYSTORE_B64 }}
+        run: echo "$KS" | base64 -d > android/app/shc-upload.jks
+
+      - name: Build APK (signed with the fixed key when the secrets exist, otherwise debug-signed)
         working-directory: android
+        env:
+          SHC_KEYSTORE_PASS: ${{ secrets.SHC_KEYSTORE_PASS }}
         run: |
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon
