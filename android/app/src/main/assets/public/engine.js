@@ -6,7 +6,7 @@
   const STOP = new Set(('a an the of to in on for with and or is are was be as at by from very much more less than then patient she he her his they them it its this that these those has have had i my me we our you your also since year years old ago after before during while when ' +
     'feels feel feeling gets get complains complaint complaints history since months month days day week weeks always sometimes often mostly usually generally especially any some all every each one two three ' +
     'cannot can not no without due because then there here but so if into onto over under about which who whom whose what when where how ' +
-    'lady woman man boy girl gentleman male female suffering suffers suffer severe mild moderate diagnosed diagnosis diagnostic tools shows shown showed found reports report investigation scan test tests ' +
+    'lady woman man boy girl gentleman male female suffering suffers suffer diagnosed diagnosis diagnostic tools shows shown showed found reports report investigation scan test tests ' +
     'constitution skills skill good bad nature natured person patient type level high low last past present now today known case history').split(/\s+/));
   // words that carry meaning even though they are in STOP for the free-text scan
   const KEEP = new Set(['cold', 'hot', 'weak', 'loss', 'lost', 'left', 'right']);
@@ -55,13 +55,30 @@
     consolation: ['consolation', 'consolation agg'], began: ['ailments from'], since: ['ailments from'], after: ['ailments from', 'after'], workplace: ['business', 'work'], office: ['business', 'work'], solitude: ['solitude', 'company aversion', 'alone'], alone: ['alone', 'solitude'], responsible: ['conscientious', 'responsibility'], responsibility: ['conscientious', 'responsibility'], conscientious: ['conscientious'],
     unfinished: ['business', 'duty'], work: ['business', 'work', 'occupation'], upset: ['vexation', 'grief'], stress: ['mental exertion', 'anxiety', 'overwork'], overwork: ['overwork', 'mental exertion'], 'late': ['night'], 'skipped': ['fasting', 'hunger'], 'meals': ['eating', 'eating after'],
     salty: ['salt', 'salty things'], salt: ['salt', 'salty'], water: ['water'], cold: ['cold', 'chilly'], recurrent: ['periodical', 'recurrent', 'chronic'], recurring: ['periodical', 'recurrent'], headaches: ['headache', 'head pain'],
+    severe: ['violent', 'severe', 'intense'], intense: ['violent'], extreme: ['violent', 'extreme'], terrible: ['violent'], unbearable: ['violent'], mild: ['slight'], slight: ['slight'],
+    attacks: ['paroxysmal', 'attacks'], attack: ['paroxysmal'], sudden: ['sudden', 'suddenly'], blisters: ['vesicles', 'blisters'], blister: ['vesicles'], boils: ['boils', 'furuncles'], giddiness: ['vertigo'], reeling: ['vertigo'],
+    sight: ['vision', 'sight'], blurred: ['blurred', 'dim'], blurry: ['blurred', 'dim'], semen: ['emissions', 'semen'], emission: ['emissions'], palpitations: ['palpitation', 'palpitations'], palpitation: ['palpitations'],
+    leg: ['legs', 'lower limbs', 'leg'], hand: ['hand', 'hands', 'upper limbs'], hands: ['hand', 'upper limbs'], foot: ['foot', 'feet', 'lower limbs'], thigh: ['thigh', 'thighs', 'lower limbs'], calf: ['calf', 'calves', 'lower limbs'], shoulder: ['shoulder', 'upper limbs'],
+    smelling: ['offensive', 'smell', 'odor'], smell: ['offensive', 'odor', 'smell'], rotten: ['putrid', 'offensive'], foul: ['offensive', 'putrid'], bad: ['offensive'], stinking: ['offensive', 'putrid'],
+    rattling: ['rattling'], breathing: ['respiration', 'breathing'], breath: ['respiration'], wind: ['wind', 'flatulence'], kneeling: ['kneeling'], yawning: ['yawning'], lying: ['lying'], sitting: ['sitting'], standing: ['standing'], walking: ['walking'],
+    pricking: ['stitching', 'pricking', 'stitches'], needle: ['stitching'], stabbing: ['stitching'], shooting: ['shooting'], cutting: ['cutting'], cramping: ['cramping'], dull: ['dull'], heavy: ['heaviness', 'heavy'], heaviness: ['heaviness'],
+    swelling: ['swelling', 'swollen'], swollen: ['swelling'], ulcers: ['ulcers', 'ulcer'], ulcer: ['ulcers'], wounds: ['wounds', 'ulcers'], wound: ['wounds'], discharge: ['discharge', 'discharges'], discharges: ['discharge'],
+    testicles: ['testes', 'testicles'], testicle: ['testes'], jaundice: ['jaundice', 'icterus'], fats: ['fat', 'fats', 'rich food'], fatty: ['fat', 'rich food'], rich: ['rich food', 'rich'], oily: ['fat', 'rich food', 'oily'],
+    midnight: ['midnight'], after: ['after'], before: ['before'], during: ['during'], while: ['while'], restless: ['restless', 'restlessness'], restlessness: ['restless'],
+    muscle: ['muscles', 'muscle'], muscles: ['muscle'], muscular: ['muscles'], unsteady: ['unsteady', 'staggering'], private: ['genitalia'], parts: ['genitalia'], genitals: ['genitalia'], vagina: ['vagina', 'genitalia'], penis: ['penis', 'genitalia'],
+    scapula: ['scapulae', 'scapula'], shoulderblade: ['scapulae'], blade: ['scapulae'], blades: ['scapulae'], numbness: ['numbness', 'numb'], numb: ['numbness'], tingling: ['tingling', 'formication'], pins: ['tingling'],
     open: ['open'], air: ['air'], fan: ['air fanned', 'air'], ac: ['cold air', 'air'], bath: ['bathing'], bathing: ['bathing'], covering: ['covering', 'covers'], uncover: ['uncovering'],
   };
 
-  const PHRASES = [[/voice box/g, 'larynx'], [/vocal cords?/g, 'vocal cords'], [/lemon water/g, 'lemons'], [/motion sickness/g, 'nausea riding'], [/travel sickness|car sickness/g, 'nausea riding'],
+  const PHRASES = [[/\bmore (when|while|during|after|before|in|on|at|from|by|with|at night|in the)\b/g, 'agg $1'], [/\bless (when|while|during|after|before|in|on|at|from|by|with)\b/g, 'amel $1'],
+    [/\bcomes? in attacks\b/g, 'paroxysmal'], [/\bin attacks\b/g, 'paroxysmal'], [/\bnight ?fall\b/g, 'emissions pollutions'], [/\bdischarge of semen\b/g, 'emissions'], [/\bwet dreams?\b/g, 'emissions'],
+    [/\bwater blisters?\b/g, 'vesicles'], [/\bsmall blisters?\b/g, 'vesicles'], [/\bheart beating fast\b/g, 'palpitation'], [/\bheart beats? fast\b/g, 'palpitation'], [/\blying down\b/g, 'lying'],
+    [/\bback of (the )?hand\b/g, 'hand back of'], [/\bnon[- ]healing wounds?\b/g, 'ulcers'], [/\bloose motions?\b/g, 'diarrhoea'], [/\bgas trouble\b/g, 'flatulence'], [/\bbody pains?\b/g, 'pain generals'],
+    [/\bhead reeling\b/g, 'vertigo'], [/\bcan ?not sleep\b/g, 'sleeplessness'], [/\bno sleep\b/g, 'sleeplessness'], [/\bfeels? like vomiting\b/g, 'nausea'], [/\bwants? to vomit\b/g, 'nausea'],
+    [/\bprivate parts?\b/g, 'genitalia'], [/\bshoulder blades?\b/g, 'scapulae'], [/voice box/g, 'larynx'], [/vocal cords?/g, 'vocal cords'], [/lemon water/g, 'lemons'], [/motion sickness/g, 'nausea riding'], [/travel sickness|car sickness/g, 'nausea riding'],
     [/semi[- ]?abdomen/g, 'abdomen'], [/after (meals?|food|eating)/g, 'eating after'], [/blood pressure/g, 'hypertension'], [/cold constitution|chilly (patient|constitution)/g, 'heat vital lack of'],
     [/hot (patient|constitution)/g, 'warm agg'], [/open air/g, 'air open'], [/left side/g, 'side left'], [/right side/g, 'side right'], [/loss of voice|voice loss/g, 'voice lost'], [/ice[- ]?cream/g, 'ice cream']];
-  function normalise(s) { s = ' ' + s.toLowerCase() + ' '; for (const [re, rep] of PHRASES) s = s.replace(re, rep); return s; }
+  function normalise(s) { s = ' ' + s.toLowerCase().replace(/\((?!\s*pqrs)[^)]*\)/g, ' ') + ' '; for (const [re, rep] of PHRASES) s = s.replace(re, rep); return s; }
   function words(s) {
     return (normalise(s).replace(/[^a-z0-9+\-\s]/g, ' ').split(/\s+/)).filter(w => w && w.length > 1 && (!STOP.has(w) || KEEP.has(w)) && !/^\d+$/.test(w));
   }
@@ -157,7 +174,7 @@
         const r = this.rubrics[i]; const nrem = this.rems(r).length; if (!nrem) continue;
         const ptoks = r.path.toLowerCase().split(/[^a-z]+/).filter(x => x.length > 2 && !['and', 'the', 'agg', 'amel', 'with', 'from', 'etc', 'during', 'after', 'before'].includes(x));
         const prec = e.n / Math.max(ptoks.length, 1);
-        let score = frac * 2 + prec * 0.4;
+        let score = frac * 3 + prec * 0.25;
         if (nrem === 1) score -= 0.25; else if (nrem === 2) score -= 0.12; if (nrem > 150) score -= 0.08; if (r.src === 'SHC') score += 0.05; if (r.src === 'RAD') score += 0.08;
         out.push({ i, n: e.n, frac, score, nrem });
       }
@@ -177,6 +194,10 @@
         const bestAdj = src => cands.filter(c => c.r.src === src && adj(c) >= adj(top) - 0.3 && c.frac >= top.frac - 0.1).sort((a, b) => adj(b) - adj(a))[0];
         [bestAdj('RAD'), bestAdj('REP'), bestAdj('SHC')].forEach(c => { if (c) picks.add(c); });
         if (!picks.size) picks.add(top);
+        // a keynote list of 1–4 remedies cannot be ranked: add the next best-matching rubrics until the keynote list has at least 6 remedies
+        const union = new Set(); const addU = c => this.rems(c.r).forEach(x => union.add(x[0]));
+        picks.forEach(addU);
+        for (const c of cands) { if (union.size >= 6) break; if (picks.has(c) || c.frac < top.frac - 0.3) continue; picks.add(c); addU(c); }
       } else {
         // other symptoms: the best match overall, plus the best full-repertory rubric (Kent-derived), the best RadarOpus rubric with 3+ remedies
         // and the best SHC-notes rubric, when each matches the words about as well as the best one
@@ -223,6 +244,20 @@
     isInimical(a, b) { return (this.inimical[a] || []).includes(b); }
     /* ---- Steps 3–11. symptoms: [{text, rubrics:[rubricIdx], keynote:bool}], thermal: 'Hot'|'Chilly'|'Ignore' */
     analyse(symptoms, thermal) {
+      const first = this._analyse(symptoms, thermal);
+      if (first.error || !first.simil || first.simil.strikes > 0) return first;
+      // Step 7 found nothing: the keynote list covers none of the other symptoms. Widen the keynote to all its candidate rubrics and retry once.
+      const key = symptoms.find(s => s.keynote);
+      if (key && key.altRubrics && key.altRubrics.length > key.rubrics.length) {
+        const widened = symptoms.map(s => s.keynote ? Object.assign({}, s, { rubrics: [...new Set([...s.rubrics, ...s.altRubrics])] }) : s);
+        const second = this._analyse(widened, thermal);
+        if (!second.error && second.simil && second.simil.strikes > 0) { second.widened = key.altRubrics.length; second.log.unshift({ step: '0 Keynote widened', text: 'The ticked keynote rubric covered none of the other symptoms, so all ' + key.altRubrics.length + ' candidate keynote rubrics were used', list: [] }); return second; }
+      }
+      first.noResult = true; first.simil = null; first.organRem = null;
+      first.log.push({ step: 'Result', text: 'No simillimum: no remedy of the keynote list covers any other symptom. Choose a different keynote rubric or add symptoms.', list: [] });
+      return first;
+    }
+    _analyse(symptoms, thermal) {
       const key = symptoms.find(s => s.keynote); const others = symptoms.filter(s => !s.keynote && s.rubrics.length);
       const log = [];
       if (!key || !key.rubrics.length) return { error: 'No keynote rubric selected.' };

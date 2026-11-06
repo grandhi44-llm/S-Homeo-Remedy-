@@ -49,7 +49,7 @@ Sweets cause drowsiness`;
     try { localStorage.setItem('shc_case', text); localStorage.setItem('shc_thermal', $('thermal').value); } catch (e) { }
     parsed = eng.parseCase(text);
     symptoms = parsed.lines.map((l, i) => {
-      const cands = eng.findRubrics(l, 12);
+      const cands = eng.findRubrics(l, i === parsed.keynote ? 20 : 12);
       const sel = new Set(eng.defaultSelect(cands, i === parsed.keynote).map(c => c.i));
       return { text: l, cands, sel, keynote: i === parsed.keynote };
     });
@@ -92,7 +92,7 @@ Sweets cause drowsiness`;
 
   /* ---------- screen 2 -> 3 ---------- */
   $('go2').onclick = () => {
-    const input = symptoms.map(s => ({ text: s.text, rubrics: [...s.sel], keynote: s.keynote }));
+    const input = symptoms.map(s => ({ text: s.text, rubrics: [...s.sel], altRubrics: s.cands.map(c => c.i), keynote: s.keynote }));
     const key = input.find(s => s.keynote);
     if (!key || !key.rubrics.length) { toast('Tick at least one rubric for the keynote symptom.'); return; }
     const res = eng.analyse(input, $('thermal').value);
@@ -100,6 +100,13 @@ Sweets cause drowsiness`;
     renderResult(res); show(3);
   };
   function renderResult(r) {
+    if (r.noResult) {
+      $('result').innerHTML = `<div class="card res none"><div class="t">No simillimum found</div><div class="name">Keynote list covers nothing</div>
+        <div class="why">None of the ${r.ranked.length} remedies in the keynote rubric appears in any rubric of the other symptoms, even after widening the keynote. The protocol cannot rank them. Go back to Rubrics and tick a different keynote rubric, or add more symptoms.</div>
+        <ul>${r.ranked.slice(0, 12).map(x => '<li>' + esc(x.name) + '</li>').join('')}</ul></div>
+        <div class="card">${r.log.map(l => `<details><summary>Step ${esc(l.step)}</summary><div class="d">${esc(l.text)}</div>${l.list.length ? '<ul>' + l.list.slice(0, 40).map(x => '<li>' + esc(x) + '</li>').join('') + '</ul>' : ''}</details>`).join('')}</div>`;
+      return;
+    }
     const sim = r.simil, org = r.organRem;
     const top = r.ranked.slice(0, 12);
     const nOthers = r.ranked.length ? (r.log.find(l => l.step.startsWith('7')) || { text: '' }).text.match(/^(\d+)/) : null;
@@ -113,6 +120,7 @@ Sweets cause drowsiness`;
         <div class="why">${esc(r.organRule)}</div><ul>${r.organEv.slice(0, 3).map(e => '<li>' + esc(e) + '</li>').join('')}</ul></div>`
         : `<div class="card res none"><div class="t">Organ remedy</div><div class="name">None found</div><div class="why">${r.organ ? 'No remedy in the balance list has organ affinity for ' + esc(r.organ) + ' in the database.' : 'The organ of the keynote symptom could not be identified.'}</div></div>`}
       <div class="card"><div class="rx">Prescription: ${esc(sim.name)}${org ? ' + ' + esc(org.name) : ''}</div>
+        ${r.widened ? `<div class="warn">Keynote widened: the ticked keynote rubric covered none of the other symptoms, so all ${r.widened} candidate keynote rubrics were used.</div>` : ''}
         <div class="hint">Keynote: ${esc(r.keynote)} · Thermal: ${esc(r.thermal === 'Ignore' ? 'ignored' : r.thermal + ' patient')}</div></div>
       <div class="card">
         <details open><summary>Ranking after recheck (Step 7)</summary>
