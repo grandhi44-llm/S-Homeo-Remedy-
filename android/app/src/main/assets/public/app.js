@@ -29,7 +29,7 @@ Sweets cause drowsiness`;
       const meta = await fetchJSON('data/meta.json', 0.1, 'remedies, thermal and relationship tables');
       const shc = await fetchJSON('data/shc.json', 0.4, 'SHC notes database');
       const rep = await fetchJSON('data/rep.json', 0.6, 'repertory (74,000 rubrics)');
-      const rad = await fetchJSON('data/rad.json', 0.92, 'RadarOpus rubric list (105,000 rubrics)');
+      const rad = await fetchJSON('data/rad.json', 0.92, 'SHC rubric list (131,000 graded rubrics)');
       $('ptxt').textContent = 'indexing…';
       await new Promise(r => setTimeout(r, 30));
       eng = new SHCEngine.Engine(meta, rep, shc, rad);

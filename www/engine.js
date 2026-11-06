@@ -191,6 +191,10 @@
     parseCase(text) {
       const SPLIT = /\n|;|\.\s+(?=[A-Z])|\s+but\s+|\s+also\s+|\s+whereas\s+/;
       let lines = text.split(SPLIT).map(s => s.trim()).filter(s => s.length > 1);
+      if (lines.length < 3) {   // paragraph style: split on commas too, re-attaching one-word fragments to a "like / such as" list
+        const parts = text.split(/,|\n|;|\.\s+(?=[A-Z])|\s+but\s+|\s+also\s+|\s+whereas\s+/).map(s => s.trim()).filter(s => s.length > 1);
+        lines = []; parts.forEach(p => { if (lines.length && p.split(/\s+/).length === 1 && !/\+\+|pqrs/i.test(p) && /\b(like|such as|e\.g\.|viz|including|especially)\b/i.test(lines[lines.length - 1])) lines[lines.length - 1] += ', ' + p; else lines.push(p); });
+      }
       let key = lines.findIndex(l => /\+\+\+|pqrs|keynote/i.test(l)); if (key < 0) key = 0;
       const topic = (() => { const m = lines[key].toLowerCase().match(/\b(headaches?|head pains?|migraines?|cough|pains?|eczema|itching|asthma|diarrh\w+|constipation|vertigo|fever|vomiting|nausea|acidity|piles|insomnia|palpitation|hoarseness|voice|menses|periods?)\b/); return m ? m[1].replace(/s$/, '') : ''; })();
       // verb cue inside a clause, e.g. "worsen from", "desires", "dislikes" -> normalised repertory wording, carried into the following short clauses
@@ -231,7 +235,7 @@
       const removedTh = [];
       if (thermal === 'Hot' || thermal === 'Chilly') {
         const opp = thermal === 'Hot' ? 'C' : 'H';
-        ranked = ranked.filter(r => { const t = this.thermalOf(r.id); if (t === opp) { removedTh.push(`${r.name} (${t === 'H' ? 'hot' : 'chilly'} remedy, ${this.thermal[r.id][2]})`); return false; } return true; });
+        ranked = ranked.filter(r => { const t = this.thermalOf(r.id); if (t === opp) { removedTh.push(`${r.name} (${t === 'H' ? 'hot' : 'chilly'} remedy — ${this.thermal[r.id][2]})`); return false; } return true; });
         log.push({ step: '5 Thermal filter (' + thermal + ' patient)', text: removedTh.length ? 'Removed ' + removedTh.length + ' opposite-thermal remedies' : 'Nothing removed', list: removedTh });
       } else log.push({ step: '5 Thermal filter', text: 'Skipped (Ignore thermals)', list: [] });
       // Step 6 top of balance list
@@ -286,16 +290,25 @@
           return ev;
         };
         let best = null;
-        for (const [rule, req] of [['organ remedy named in SHC organopathy notes', true], ['rows naming the organ (Larynx/Voice etc.) in SHC notes, RadarOpus list or Boericke', false]]) {
+        const aff = this.meta.organ_affinity || {};
+        const affScore = c => {                       // SHC organ-affinity table (Remedy Finder 35.7): text for this organ, weighted by organ-specific words
+          const t = (aff[c.id] || {})[organ]; if (!t) return null;
+          const tl = t.toLowerCase(); const specific = od.w.some(w => tl.includes(w)); const kwHit = kw.some(k => k.length > 3 && tl.includes(k));
+          return { s: 3 + (specific ? 3 : 0) + (kwHit ? 2 : 0), text: t };
+        };
+        for (const [rule, req] of [['organ remedy in SHC organ-affinity table / organopathy notes', true], ['rows naming the organ in SHC notes, RadarOpus list or Boericke', false]]) {
           for (const c of cands) {
-            const ev = score(c, req); if (!ev.length) continue;
-            const s = ev.reduce((a, e) => a + e.s, 0);
+            const ev = score(c, req);
+            const a = req ? affScore(c) : null;
+            if (a) ev.unshift({ s: a.s, row: [c.id, '', 'SHC organ affinity - ' + organ, '', a.text, 'SHC organ table', ''] });
+            if (!ev.length) continue;
+            const s = ev.reduce((x, e) => x + e.s, 0);
             // preference agreed with SHC: fewest Step-7 strikes first (organ-specific rather than constitutional), then strongest organ evidence
             if (!best || c.strikes < best.c.strikes || (c.strikes === best.c.strikes && s > best.s)) best = { s, c, ev, rule };
           }
           if (best) break;
         }
-        if (best) { organRem = best.c; organRule = best.rule + ' · fewest Step-7 strikes (' + best.c.strikes + ')'; organEv = best.ev.sort((a, b) => b.s - a.s).slice(0, 4).map(e => (e.row[2] || '') + (e.row[3] ? ' — ' + e.row[3] : '') + ' [' + e.row[5] + ']'); }
+        if (best) { organRem = best.c; organRule = best.rule + ' · fewest Step-7 strikes (' + best.c.strikes + ')'; organEv = best.ev.sort((a, b) => b.s - a.s).slice(0, 4).map(e => (e.row[2] || '') + (e.row[3] ? ' — ' + e.row[3] : (e.row[4] ? ' — ' + e.row[4].slice(0, 220) : '')) + ' [' + e.row[5] + ']'); }
       }
       log.push({ step: '10 Organ remedy', text: organ ? (organRem ? `${organRem.name} — organ: ${organ} (${organRule})` : `No organ remedy found for ${organ} in the balance list`) : 'Keynote organ not identified', list: organEv });
       return { keynote: key.text, organ, simil, organRem, organRule, organEv, ranked, balance, removedTh, removedIn, log, thermal };
